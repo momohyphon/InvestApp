@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, Dimensions } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { db } from './firebaseConfig';
 import { doc, onSnapshot } from 'firebase/firestore';
@@ -15,13 +15,22 @@ import USGraphTrend from './USGraphTrend';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('FINANCE');
-  const [krSubTab, setKrSubTab] = useState('뉴스'); // 뉴스를 기본으로
-  const [usSubTab, setUsSubTab] = useState('뉴스'); // 뉴스를 기본으로
+  const [krSubTab, setKrSubTab] = useState('뉴스');
+  const [usSubTab, setUsSubTab] = useState('뉴스');
   const [financeData, setFinanceData] = useState(null);
   const [krNewsData, setKrNewsData] = useState(null);
   const [usNewsData, setUsNewsData] = useState(null);
-  const [krRsData, setKrRsData] = useState(null); // 한국 RS 데이터
-  const [usRsData, setUsRsData] = useState(null); // 미국 RS 데이터
+  const [krRsData, setKrRsData] = useState(null);
+  const [usRsData, setUsRsData] = useState(null);
+  const [dimensions, setDimensions] = useState(Dimensions.get('window'));
+
+  // 화면 회전 감지
+  useEffect(() => {
+    const subscription = Dimensions.addEventListener('change', ({ window }) => {
+      setDimensions(window);
+    });
+    return () => subscription?.remove();
+  }, []);
 
   useEffect(() => {
     // Finance 데이터
@@ -92,7 +101,6 @@ export default function App() {
       case 'KOREA':
         return (
           <View style={styles.tabContent}>
-            {/* 서브 탭 */}
             <View style={styles.subTabBar}>
               <TouchableOpacity
                 style={[styles.subTab, krSubTab === '뉴스' && styles.subTabActive]}
@@ -126,7 +134,6 @@ export default function App() {
       case 'USA':
         return (
           <View style={styles.tabContent}>
-            {/* 서브 탭 */}
             <View style={styles.subTabBar}>
               <TouchableOpacity
                 style={[styles.subTab, usSubTab === '뉴스' && styles.subTabActive]}
@@ -165,12 +172,10 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <SafeAreaView style={styles.container} edges={['top']}>
-        {/* 헤더 */}
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Finance Summary</Text>
         </View>
 
-        {/* 탭 네비게이션 */}
         <View style={styles.tabBar}>
           <TouchableOpacity
             style={[styles.tab, activeTab === 'FINANCE' && styles.tabActive]}
@@ -200,7 +205,6 @@ export default function App() {
           </TouchableOpacity>
         </View>
 
-        {/* 컨텐츠 영역 */}
         <View style={styles.content}>
           {renderContent()}
         </View>
