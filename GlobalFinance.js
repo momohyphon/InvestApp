@@ -71,13 +71,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',
   },
   content: {
-    padding: 15,
+    paddingHorizontal: 15,
+    paddingTop: 50,
+    paddingBottom: 15,
   },
   section: {
     borderLeftWidth: 3,
     borderLeftColor: '#ff6b00',
     paddingLeft: 15,
     marginBottom: 25,
+    
   },
   sectionTitle: {
     fontSize: 14,
