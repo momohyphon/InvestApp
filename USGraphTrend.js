@@ -44,16 +44,10 @@ const USGraphTrend = () => {
     return () => unsub();
   }, []);
 
-  if (!chartData) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.loadingText}>데이터 로딩 중...</Text>
-      </View>
-    );
-  }
+  if (!chartData) return <View style={styles.container}><Text style={styles.loadingText}>데이터 로딩 중...</Text></View>;
 
-  const chartWidth = dimensions.width - 60;
-  const chartHeight = 300;
+  const chartWidth = dimensions.width - 20;
+  const chartHeight = 320;
 
   return (
     <ScrollView style={styles.container}>
@@ -71,142 +65,80 @@ const USGraphTrend = () => {
             decimalPlaces: 0,
             color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
             labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-            style: {
-              borderRadius: 16,
-            },
-            propsForDots: {
-              r: '4',
-              strokeWidth: '2',
-            },
+            propsForDots: { r: '3', strokeWidth: '1' },
           }}
           bezier
-          style={styles.chart}
+          style={{
+            marginVertical: 8,
+            borderRadius: 16,
+            marginLeft: -30,
+          }}
           withVerticalLines={false}
           segments={5}
         />
         
-        {/* 선 끝에 바로 붙는 라벨 */}
-        <View style={[styles.labelContainer, { width: chartWidth }]}>
+        {/* 종목명을 오른쪽 흰색 영역에 표시 */}
+        <View style={[StyleSheet.absoluteFill, { pointerEvents: 'none' }]}>
           {stocks.map((stock, idx) => {
             const lastValue = stock.rs_10;
-            // 차트 내부 영역 계산
-            const chartTop = 40;
-            const chartBottom = chartHeight - 40;
-            const chartRange = chartBottom - chartTop;
             
-            // RS 값을 Y 위치로 변환
-            const yPosition = chartTop + chartRange - ((lastValue / 100) * chartRange);
+            // xPos: 오른쪽으로 이동
+            const xPos = chartWidth - 70; 
+            
+            // yPos: 선 끝점의 높이 계산
+            const chartTop = 45;
+            const chartBottom = chartHeight - 75;
+            const chartRange = chartBottom - chartTop;
+            const yPos = chartTop + chartRange - ((lastValue / 100) * chartRange);
+            
+            const stockColor = `hsl(${(idx * 360) / stocks.length}, 70%, 50%)`;
             
             return (
               <View 
                 key={stock.code} 
-                style={[
-                  styles.labelItem,
-                  { 
-                    top: yPosition - 10,
-                    right: 45,
-                    backgroundColor: `hsl(${(idx * 360) / stocks.length}, 70%, 50%)`
-                  }
-                ]}
+                style={{
+                  position: 'absolute',
+                  left: xPos, 
+                  top: yPos - 8,
+                }}
               >
-                <Text style={styles.labelText}>{stock.code}</Text>
+                <Text style={{
+                  color: stockColor,
+                  fontSize: 11,
+                  fontWeight: '900',
+                }}>
+                  {stock.code}
+                </Text>
               </View>
             );
           })}
         </View>
       </View>
 
-      {/* 범례 */}
       <View style={styles.legendContainer}>
         <Text style={styles.legendTitle}>RANKING (RS)</Text>
         {stocks.map((stock, idx) => (
           <View key={stock.code} style={styles.legendItem}>
-            <View 
-              style={[
-                styles.legendColor, 
-                { backgroundColor: `hsl(${(idx * 360) / stocks.length}, 70%, 50%)` }
-              ]} 
-            />
-            <Text style={styles.legendText}>
-              {stock.code} ({stock.rs_avg})
-            </Text>
+            <View style={[styles.legendColor, { backgroundColor: `hsl(${(idx * 360) / stocks.length}, 70%, 50%)` }]} />
+            <Text style={styles.legendText}>{stock.code} ({stock.rs_avg})</Text>
           </View>
         ))}
+        <View style={{ height: 60 }} />
       </View>
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#000',
-  },
-  loadingText: {
-    color: '#fff',
-    textAlign: 'center',
-    padding: 20,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '900',
-    color: '#000',
-    backgroundColor: '#fff',
-    padding: 15,
-    marginBottom: 20,
-  },
-  chartWrapper: {
-    position: 'relative',
-    marginHorizontal: 15,
-  },
-  chart: {
-    marginVertical: 8,
-    borderRadius: 16,
-  },
-  labelContainer: {
-    position: 'absolute',
-    top: 8,
-    right: 0,
-    height: 300,
-  },
-  labelItem: {
-    position: 'absolute',
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 4,
-  },
-  labelText: {
-    color: '#fff',
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  legendContainer: {
-    backgroundColor: '#fff',
-    margin: 15,
-    padding: 15,
-    borderRadius: 10,
-  },
-  legendTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    textDecorationLine: 'underline',
-  },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 5,
-  },
-  legendColor: {
-    width: 15,
-    height: 15,
-    borderRadius: 3,
-    marginRight: 10,
-  },
-  legendText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
+  container: { flex: 1, backgroundColor: '#000' },
+  loadingText: { color: '#fff', textAlign: 'center', padding: 20 },
+  title: { fontSize: 18, fontWeight: '900', color: '#000', backgroundColor: '#fff', padding: 15, marginBottom: 20 },
+  chartWrapper: { position: 'relative', marginHorizontal: 10, backgroundColor: '#fff', borderRadius: 16, overflow: 'visible' },
+  legendContainer: { backgroundColor: '#fff', margin: 15, padding: 15, borderRadius: 10, marginBottom: 30 },
+  legendTitle: { fontSize: 14, fontWeight: 'bold', marginBottom: 10, textDecorationLine: 'underline' },
+  legendItem: { flexDirection: 'row', alignItems: 'center', marginVertical: 5 },
+  legendColor: { width: 15, height: 15, borderRadius: 3, marginRight: 10 },
+  legendText: { fontSize: 13, fontWeight: '600' },
 });
 
 export default USGraphTrend;
