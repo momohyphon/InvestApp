@@ -22,15 +22,14 @@ const KRGraphTrend = () => {
         const rankings = docSnapshot.data().rankings || [];
         const filtered = rankings
           .filter(item => item.rs_avg >= 75)
-          .sort((a, b) => b.rs_avg - a.rs_avg)
-          .slice(0, 5);
+          .sort((a, b) => b.rs_avg - a.rs_avg);
 
         setStocks(filtered);
 
         if (filtered.length > 0) {
           const datasets = filtered.map((stock, idx) => ({
             data: [stock.rs_180, stock.rs_90, stock.rs_60, stock.rs_30, stock.rs_10],
-            color: () => `hsl(${(idx * 360) / filtered.length}, 70%, 50%)`,
+            color: () => `hsl(${(idx * 360) / filtered.length}, 70%, 60%)`,
             strokeWidth: 2,
           }));
 
@@ -44,101 +43,166 @@ const KRGraphTrend = () => {
     return () => unsub();
   }, []);
 
-  if (!chartData) return <View style={styles.container}><Text style={styles.loadingText}>데이터 로딩 중...</Text></View>;
+  if (!chartData) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.loadingText}>데이터 로딩 중...</Text>
+      </View>
+    );
+  }
 
-  const chartWidth = dimensions.width - 20;
-  const chartHeight = 320;
+  const chartWidth = dimensions.width - 70;
+  const chartHeight = 300;
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.title}>KOSPI RS MOMENTUM (KR)</Text>
-
-      <View style={styles.chartWrapper}>
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>KOSPI RS MOMENTUM (75+)</Text>
+        
         <LineChart
           data={chartData}
           width={chartWidth}
           height={chartHeight}
           chartConfig={{
-            backgroundColor: '#fff',
-            backgroundGradientFrom: '#fff',
-            backgroundGradientTo: '#fff',
+            backgroundColor: '#1a1a1a',
+            backgroundGradientFrom: '#1a1a1a',
+            backgroundGradientTo: '#1a1a1a',
             decimalPlaces: 0,
-            color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-            labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-            propsForDots: { r: '3', strokeWidth: '1' },
+            color: (opacity = 1) => `rgba(255, 255, 255, ${opacity * 0.5})`,
+            labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity * 0.7})`,
+            propsForDots: {
+              r: '4',
+              strokeWidth: '2',
+            },
+            propsForBackgroundLines: {
+              stroke: 'rgba(255,255,255,0.1)',
+            },
           }}
           bezier
-          style={{
-            marginVertical: 8,
-            borderRadius: 16,
-            marginLeft: -30,
-          }}
+          style={styles.chart}
           withVerticalLines={false}
           segments={5}
+          renderDotContent={({ x, y, index, indexData }) => {
+            // 마지막 점(10D)에만 라벨 표시
+            if (index === 4) {
+              const datasetIndex = chartData.datasets.findIndex(ds => 
+                ds.data[4] === indexData
+              );
+              
+              if (datasetIndex !== -1 && stocks[datasetIndex]) {
+                const stock = stocks[datasetIndex];
+                const hue = (datasetIndex * 360) / stocks.length;
+                const stockColor = `hsl(${hue}, 70%, 60%)`;
+                
+                return (
+                  <Text
+                    key={`label-${datasetIndex}`}
+                    style={{
+                      position: 'absolute',
+                      left: x + 8,
+                      top: y - 8,
+                      color: stockColor,
+                      fontSize: 10,
+                      fontWeight: 'bold',
+                    }}
+                  >
+                    {stock.name}
+                  </Text>
+                );
+              }
+            }
+            return null;
+          }}
         />
-        
-        {/* 종목명을 더 오른쪽으로 */}
-        <View style={[StyleSheet.absoluteFill, { pointerEvents: 'none' }]}>
-          {stocks.map((stock, idx) => {
-            const lastValue = stock.rs_10;
-            
-            // xPos: 더 오른쪽으로 이동
-            const xPos = chartWidth - 70; 
-            
-            // yPos: 선 끝점의 높이 계산
-            const chartTop = 45;
-            const chartBottom = chartHeight - 75;
-            const chartRange = chartBottom - chartTop;
-            const yPos = chartTop + chartRange - ((lastValue / 100) * chartRange);
-            
-            const stockColor = `hsl(${(idx * 360) / stocks.length}, 70%, 50%)`;
-            
-            return (
-              <View 
-                key={stock.name} 
-                style={{
-                  position: 'absolute',
-                  left: xPos, 
-                  top: yPos - 8,
-                }}
-              >
-                <Text style={{
-                  color: stockColor,
-                  fontSize: 11,
-                  fontWeight: '900',
-                }}>
-                  {stock.name}
+
+        {/* 범례 */}
+        <View style={styles.legendContainer}>
+          <Text style={styles.legendTitle}>RS 75+ STOCKS ({stocks.length})</Text>
+          <ScrollView style={{ maxHeight: 300 }}>
+            {stocks.map((stock, idx) => (
+              <View key={stock.name} style={styles.legendItem}>
+                <View 
+                  style={[
+                    styles.legendColor, 
+                    { backgroundColor: `hsl(${(idx * 360) / stocks.length}, 70%, 60%)` }
+                  ]} 
+                />
+                <Text style={styles.legendText}>
+                  {stock.name} ({stock.rs_avg})
                 </Text>
               </View>
-            );
-          })}
+            ))}
+          </ScrollView>
         </View>
       </View>
-
-      <View style={styles.legendContainer}>
-        <Text style={styles.legendTitle}>RANKING (RS)</Text>
-        {stocks.map((stock, idx) => (
-          <View key={stock.name} style={styles.legendItem}>
-            <View style={[styles.legendColor, { backgroundColor: `hsl(${(idx * 360) / stocks.length}, 70%, 50%)` }]} />
-            <Text style={styles.legendText}>{stock.name} ({stock.rs_avg})</Text>
-          </View>
-        ))}
-        <View style={{ height: 60 }} />
-      </View>
+      
+      {/* 하단 여백 (스마트폰 네비게이션 바 공간) */}
+      <View style={{ height: 80 }} />
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
-  loadingText: { color: '#fff', textAlign: 'center', padding: 20 },
-  title: { fontSize: 18, fontWeight: '900', color: '#000', backgroundColor: '#fff', padding: 15, marginBottom: 20 },
-  chartWrapper: { position: 'relative', marginHorizontal: 10, backgroundColor: '#fff', borderRadius: 16, overflow: 'visible' },
-  legendContainer: { backgroundColor: '#fff', margin: 15, padding: 15, borderRadius: 10, marginBottom: 30 },
-  legendTitle: { fontSize: 14, fontWeight: 'bold', marginBottom: 10, textDecorationLine: 'underline' },
-  legendItem: { flexDirection: 'row', alignItems: 'center', marginVertical: 5 },
-  legendColor: { width: 15, height: 15, borderRadius: 3, marginRight: 10 },
-  legendText: { fontSize: 13, fontWeight: '600' },
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  loadingText: {
+    color: '#fff',
+    textAlign: 'center',
+    padding: 20,
+  },
+  card: {
+    backgroundColor: '#1a1a1a',
+    borderRadius: 12,
+    padding: 20,
+    margin: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#ff6b00',
+    marginBottom: 20,
+    letterSpacing: 1,
+  },
+  chart: {
+    marginVertical: 8,
+    borderRadius: 12,
+  },
+  legendContainer: {
+    marginTop: 25,
+    padding: 15,
+    backgroundColor: '#0a0a0a',
+    borderRadius: 8,
+  },
+  legendTitle: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#999',
+    marginBottom: 12,
+    letterSpacing: 1,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 5,
+  },
+  legendColor: {
+    width: 12,
+    height: 12,
+    borderRadius: 2,
+    marginRight: 8,
+  },
+  legendText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#fff',
+  },
 });
 
 export default KRGraphTrend;
