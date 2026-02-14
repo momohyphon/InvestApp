@@ -1,9 +1,38 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Linking, ScrollView } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Linking, ScrollView, Animated } from 'react-native';
 
 const GlobalFinance = ({ data }) => {
   if (!data || !data.items) return null;
   const { bonds, items, update_time } = data;
+
+  const BlinkingText = ({ children }) => {
+    const opacity = useRef(new Animated.Value(1)).current;
+
+    useEffect(() => {
+      const animation = Animated.loop(
+        Animated.sequence([
+          Animated.timing(opacity, {
+            toValue: 0.3,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+          Animated.timing(opacity, {
+            toValue: 1,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+      animation.start();
+      return () => animation.stop();
+    }, []);
+
+    return (
+      <Animated.Text style={{ opacity }}>
+        {children}
+      </Animated.Text>
+    );
+  };
 
   const renderVal = (val) => {
     const num = parseFloat(val);
@@ -15,17 +44,31 @@ const GlobalFinance = ({ data }) => {
     );
   };
 
-  const renderTile = (name, value, change, link) => (
-    <TouchableOpacity 
-      key={name} 
-      style={styles.tile}
-      onPress={() => link && Linking.openURL(link)}
-    >
-      <Text style={styles.tileName} numberOfLines={1}>{name}</Text>
-      <Text style={styles.tileValue}>{value}</Text>
-      {renderVal(change)}
-    </TouchableOpacity>
-  );
+  const renderTile = (name, value, change, link) => {
+    const num = parseFloat(change);
+    const isHighVolatility = Math.abs(num) >= 2;
+    
+    return (
+      <TouchableOpacity 
+        key={name} 
+        style={styles.tile}
+        onPress={() => link && Linking.openURL(link)}
+      >
+        {isHighVolatility ? (
+          <BlinkingText>
+            <Text style={[styles.tileName, styles.nameHighlight]} numberOfLines={1}>
+              {name}
+            </Text>
+          </BlinkingText>
+        ) : (
+          <Text style={styles.tileName} numberOfLines={1}>{name}</Text>
+        )}
+        
+        <Text style={styles.tileValue}>{value}</Text>
+        {renderVal(change)}
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <ScrollView style={styles.container}>
@@ -73,14 +116,13 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: 15,
     paddingTop: 50,
-    paddingBottom: 15,
+    paddingBottom: 80,
   },
   section: {
     borderLeftWidth: 3,
     borderLeftColor: '#ff6b00',
     paddingLeft: 15,
     marginBottom: 25,
-    
   },
   sectionTitle: {
     fontSize: 14,
@@ -99,6 +141,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#aaa',
     width: 100,
+  },
+  nameHighlight: {
+    color: '#00ff41',
+    fontWeight: '900',
   },
   tileValue: {
     flex: 1,
