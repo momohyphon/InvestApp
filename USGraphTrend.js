@@ -128,7 +128,7 @@ const USGraphTrend = () => {
                   ]} 
                 />
                 <Text style={styles.legendText}>
-                  {stock.code} ({stock.rs_avg})
+                  {stock.name} ({stock.rs_avg})
                 </Text>
               </View>
             ))}

@@ -22,7 +22,7 @@ const KRNews = ({ data, rsData }) => {
 
   if (!selectedStock) {
     return (
-      <ScrollView style={styles.container}>
+      <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 80 }}>
         <Text style={styles.headerTitle}>Heating Company News</Text>
         
         {stockKeys.map((key, index) => (
@@ -49,10 +49,10 @@ const KRNews = ({ data, rsData }) => {
     );
   }
 
-  const newsArticles = (data[selectedStock]?.articles || []).slice(0, 10);
+  const newsArticles = (data[selectedStock]?.articles || []).slice(0, 20);
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 80 }}>
       <Pressable 
         style={styles.backButton}
         onPress={() => setSelectedStock(null)}
